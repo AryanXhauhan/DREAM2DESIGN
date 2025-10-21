@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preview - DreamTravel</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Arial', sans-serif;
+        }
+        nav {
+            display: flex;
+            justify-content: space-between;
+            padding: 1rem 5%;
+            background: #2c3e50;
+            color: white;
+        }
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        nav ul {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+        nav a {
+            color: white;
+            text-decoration: none;
+        }
+        .hero {
+            height: 70vh;
+            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://via.placeholder.com/1920x1080');
+            background-size: cover;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+        }
+        .search-bar {
+            margin-top: 2rem;
+        }
+        .search-bar input {
+            padding: 1rem;
+            width: 300px;
+            border: none;
+            border-radius: 5px 0 0 5px;
+        }
+        .search-bar button {
+            padding: 1rem 2rem;
+            border: none;
+            background: #3498db;
+            color: white;
+            border-radius: 0 5px 5px 0;
+            cursor: pointer;
+        }
+        .destinations {
+            padding: 4rem 5%;
+        }
+        .destination-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        .destination-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .destination-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        .destination-card h3 {
+            margin: 1rem;
+        }
+        .destination-card p {
+            margin: 0 1rem 1rem;
+            color: #666;
+        }
+        .price {
+            padding: 1rem;
+            color: #27ae60;
+            font-weight: bold;
+        }
+        footer {
+            background: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 2rem 5%;
+        }
+        @media (max-width: 768px) {
+            nav ul {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">DreamTravel</div>
+            <ul>
+                <li><a href="#home">Home</a></li>
+                <li><a href="#packages">Packages</a></li>
+                <li><a href="#services">Services</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <section class="hero" id="home">
+        <div class="hero-content">
+            <h1>Discover Your Next Adventure</h1>
+            <div class="search-bar">
+                <input type="text" placeholder="Where to?" id="searchInput">
+                <button onclick="searchDestinations()">Search</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="destinations" id="packages">
+        <h2>Popular Destinations</h2>
+        <div class="destination-grid">
+            <div class="destination-card">
+                <img src="https://via.placeholder.com/300x200" alt="Goa">
+                <h3>Goa Beaches</h3>
+                <p>Enjoy sunny beaches and vibrant nightlife</p>
+                <div class="price">From ₹15,999</div>
+            </div>
+            <div class="destination-card">
+                <img src="https://via.placeholder.com/300x200" alt="Himalayas">
+                <h3>Himalayan Trek</h3>
+                <p>Adventure in the mighty Himalayas</p>
+                <div class="price">From ₹25,999</div>
+            </div>
+        </div>
+    </section>
+
+    <footer id="contact">
+        <p>Contact us: contact@dreamtravel.in</p>
+        <p>© 2023 DreamTravel. All rights reserved.</p>
+    </footer>
+
+    <script>
+        function searchDestinations() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            console.log('Searching for:', searchTerm);
+        }
+        console.log('Welcome to DreamTravel!');
+    </script>
+</body>
+</html>

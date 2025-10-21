@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TravelBuddy - Book Flights, Hotels, Holiday Packages</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <h1 class="logo">TravelBuddy</h1>
+            <div class="nav-items">
+                <a href="#flights">Flights</a>
+                <a href="#hotels">Hotels</a>
+                <a href="#holidays">Holidays</a>
+                <a href="#" class="login-btn" onclick="showSignupModal()">Login/Sign Up</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Signup Modal -->
+    <div id="signupModal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close" onclick="hideSignupModal()">&times;</span>
+            <h2>Create Account</h2>
+            <form id="signup-form" onsubmit="handleSignup(event)">
+                <input type="text" placeholder="Full Name" required>
+                <input type="email" placeholder="Email Address" required>
+                <input type="tel" placeholder="Phone Number" required>
+                <input type="password" placeholder="Create Password" required>
+                <input type="password" placeholder="Confirm Password" required>
+                <button type="submit">Sign Up</button>
+                <p>Already have an account? <a href="#" onclick="showLogin()">Login</a></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Rest of existing content -->
+    <script src="app.js"></script>
+</body>
+</html>

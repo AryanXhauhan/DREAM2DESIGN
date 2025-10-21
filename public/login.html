@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login - Dream2Design</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: #fff;
+    }
+
+    /* Fullscreen video */
+    .bg-video {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      z-index: -1;
+    }
+
+    .gradient-text {
+      font-size: 70px !important;
+      font-weight: bold;
+      background: linear-gradient(to right, #ff0000, #9500ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .text {
+      position: absolute;
+      top: 8%;
+      text-align: center;
+      width: 100%;
+      color: white;
+    }
+    .text h1 { font-size: 42px; margin: 0; }
+
+    /* Login card */
+    .login-container {
+      position: absolute;
+      top: 30%;
+      width: 320px;
+      background: rgba(255,0,0,0.2);
+      border: 1px solid red;
+      padding: 20px 30px;
+      border-radius: 16px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+      text-align: center;
+    }
+    .login-container h2 { color: #c2c2c2; }
+
+    .input-field {
+      width: 92%; height: 45px; margin: 10px 0;
+      padding: 0 12px; border-radius: 8px;
+      border: 1px solid #ccc; font-size: 14px;
+    }
+
+    .login-btn {
+      width: 100%;
+      padding: 12px;
+      margin-top: 20px;
+      border: none;
+      background: #007bff;
+      color: #fff; border-radius: 8px;
+      font-size: 15px;
+      cursor: pointer;
+    }
+    .login-btn:hover { background: #0056b3; }
+
+    .google-btn {
+      display:flex; align-items:center; justify-content:center;
+      gap: 10px;
+      margin-top: 15px;
+      width: 93%; padding: 10px;
+      border: 1px solid #ccc; background: #fff;
+      border-radius: 8px; color: #000; cursor:pointer;
+    }
+    .google-btn img { width: 20px; height: 20px; }
+
+    /* Profile display after login */
+    #profile {
+      margin-top: 20px;
+      text-align: center;
+    }
+    #profile img {
+      width: 40px; height: 40px; border-radius: 50%;
+    }
+    #logoutBtn {
+      background: #ff2a3a; color:#fff;
+      border:none; border-radius:5px;
+      padding:5px 10px; margin-top:10px;
+      cursor:pointer; font-size:13px;
+    }
+    #logoutBtn:hover { background:#c91c2f; }
+  </style>
+</head>
+
+<body>
+  <video autoplay muted loop playsinline class="bg-video">
+    <source src="assets/bg.MOV" type="video/mp4"/>
+  </video>
+
+  <div class="text">
+    <h1>Welcome Back to</h1>
+    <h1 class="gradient-text">Dream2Design</h1>
+  </div>
+
+  <!-- Login Box -->
+  <div class="login-container" id="login-container">
+    <h2>Login</h2>
+    <form id="loginForm">
+      <input type="email" id="email" placeholder="Email" class="input-field" required/>
+      <input type="password" id="password" placeholder="Password" class="input-field" required/>
+      <button type="submit" class="login-btn">Sign In</button>
+    </form>
+
+    <div class="google-btn" id="googleLogin" role="button" tabindex="0">
+      <img src="https://www.svgrepo.com/show/355037/google.svg" alt="Google"/>
+      <span>Sign in with Google</span>
+    </div>
+
+    <div id="profile"></div>
+  </div>
+
+  <script type="module">
+  import { auth, provider, signInWithPopup, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "./firebase.js";
+
+  const loginForm = document.getElementById("loginForm");
+  const profileDiv = document.getElementById("profile");
+
+  // Email login
+  loginForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const email = document.getElementById("email").value;
+    const pass = document.getElementById("password").value;
+
+    signInWithEmailAndPassword(auth, email, pass)
+      .then(res => handleLogin(res.user))
+      .catch(err => alert("❌ " + err.message));
+  });
+
+  // Google login
+  document.getElementById("googleLogin").addEventListener("click", () => {
+    signInWithPopup(auth, provider)
+      .then(res => handleLogin(res.user))
+      .catch(err => alert("❌ " + err.message));
+  });
+
+  function handleLogin(user) {
+    // Save user info in localStorage
+    localStorage.setItem("loggedIn", "true");
+    localStorage.setItem("username", user.displayName || user.email || "User");
+    localStorage.setItem("avatarURL", user.photoURL || "assets/default-avatar.png");
+
+    // Redirect straight to front.html
+    window.location.href = "front.html";
+  }
+
+  // Keep session alive
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      localStorage.setItem("loggedIn", "true");
+      localStorage.setItem("username", user.displayName || user.email || "User");
+      localStorage.setItem("avatarURL", user.photoURL || "assets/default-avatar.png");
+    } else {
+      localStorage.removeItem("loggedIn");
+      localStorage.removeItem("username");
+      localStorage.removeItem("avatarURL");
+    }
+  });
+
+  // Logout logic (used when logout button clicked from profile OR front.html)
+  window.addEventListener("click", (e) => {
+    if (e.target && e.target.id === "logoutBtn") {
+      signOut(auth).then(() => {
+        localStorage.removeItem("loggedIn");
+        localStorage.removeItem("username");
+        localStorage.removeItem("avatarURL");
+        window.location.href = "front.html"; // redirect to front.html after logout
+      });
+    }
+  });
+</script>
+</body>
+</html>

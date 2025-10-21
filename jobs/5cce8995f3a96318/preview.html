@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preview</title>
+    <style>
+        body {
+            font-family: 'Google Sans', Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: #fff;
+        }
+
+        .login-container {
+            width: 450px;
+            padding: 48px 40px 36px;
+            border: 1px solid #dadce0;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .logo {
+            width: 75px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 400;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 16px;
+            color: #202124;
+            margin-bottom: 35px;
+        }
+
+        .input-group {
+            margin-bottom: 8px;
+        }
+
+        input[type="email"] {
+            width: 100%;
+            padding: 13px 15px;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+        }
+
+        input[type="email"]:focus {
+            border-color: #1a73e8;
+            outline: none;
+        }
+
+        .forgot-email {
+            display: block;
+            text-align: left;
+            color: #1a73e8;
+            text-decoration: none;
+            font-weight: 500;
+            margin: 8px 0 40px;
+        }
+
+        .disclaimer {
+            text-align: left;
+            color: #5f6368;
+            font-size: 14px;
+            margin-bottom: 40px;
+        }
+
+        .learn-more {
+            color: #1a73e8;
+            text-decoration: none;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .create-account {
+            color: #1a73e8;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .next-button {
+            background: #1a73e8;
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .next-button:hover {
+            background: #1557b0;
+        }
+
+        @media (max-width: 500px) {
+            .login-container {
+                border: none;
+                width: 100%;
+                padding: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <img src="https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png" alt="Google" class="logo">
+        <h1>Sign in</h1>
+        <p class="subtitle">Use your Google Account</p>
+        
+        <form id="loginForm">
+            <div class="input-group">
+                <input type="email" id="email" placeholder="Email or phone" required>
+            </div>
+            <a href="#" class="forgot-email">Forgot email?</a>
+            
+            <div class="disclaimer">
+                <p>Not your computer? Use Guest mode to sign in privately.</p>
+                <a href="#" class="learn-more">Learn more</a>
+            </div>
+            
+            <div class="button-group">
+                <a href="#" class="create-account">Create account</a>
+                <button type="submit" class="next-button">Next</button>
+            </div>
+        </form>
+    </div>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            
+            if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                console.log('Redirecting to password page...');
+            } else {
+                alert('Please enter a valid email address');
+            }
+        });
+    </script>
+</body>
+</html>

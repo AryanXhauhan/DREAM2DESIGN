@@ -1,0 +1,194 @@
+/* Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #f5f6fa;
+}
+
+/* Navigation */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 5%;
+    background: #fff;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.logo {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #2d3436;
+}
+
+.nav-items a {
+    margin-left: 2rem;
+    text-decoration: none;
+    color: #636e72;
+    transition: 0.3s;
+}
+
+.nav-items a.active,
+.nav-items a:hover {
+    color: #0984e3;
+}
+
+/* Hero Section */
+.hero {
+    height: 70vh;
+    background: linear-gradient(135deg, #0984e3, #74b9ff);
+    padding: 2rem 5%;
+    position: relative;
+    overflow: hidden;
+}
+
+.search-card {
+    background: rgba(255,255,255,0.95);
+    border-radius: 15px;
+    padding: 2rem;
+    max-width: 1000px;
+    margin: 2rem auto;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    transform: translateY(50px);
+    animation: slideUp 0.8s ease-out forwards;
+}
+
+@keyframes slideUp {
+    to { transform: translateY(0); }
+}
+
+.tabs {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.tabs button {
+    padding: 1rem 2rem;
+    border: none;
+    background: #f5f6fa;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.tabs button.active {
+    background: #0984e3;
+    color: white;
+}
+
+.search-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.input-group {
+    position: relative;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #2d3436;
+}
+
+.input-group input,
+.input-group select {
+    width: 100%;
+    padding: 0.8rem;
+    border: 2px solid #dfe6e9;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: 0.3s;
+}
+
+.input-group input:focus,
+.input-group select:focus {
+    border-color: #0984e3;
+    outline: none;
+}
+
+.search-btn {
+    grid-column: 1 / -1;
+    padding: 1.2rem;
+    background: #0984e3;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.search-btn:hover {
+    background: #0873c4;
+    transform: translateY(-2px);
+}
+
+/* Deals Section */
+.deals-section {
+    padding: 4rem 5%;
+}
+
+.deals-section h2 {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.deals-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+}
+
+.deal-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    transition: 0.3s;
+}
+
+.deal-card:hover {
+    transform: translateY(-5px);
+}
+
+.deal-card img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+
+.deal-card h3 {
+    padding: 1rem;
+    color: #2d3436;
+}
+
+.deal-card p {
+    padding: 0 1rem 1rem;
+    color: #0984e3;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+/* Animations */
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+@media (max-width: 768px) {
+    .nav-items {
+        display: none;
+    }
+    .search-card {
+        margin: 1rem;
+        padding: 1rem;
+    }
+}

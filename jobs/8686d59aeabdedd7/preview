@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TravelBuddy Preview</title>
+    <style>
+    /* All CSS styles from above */
+    :root{--primary:#2A2A72;--secondary:#009FFD;--accent:#FF3C00;}*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Segoe UI',sans-serif;}.navbar{display:flex;justify-content:space-between;padding:1.5rem 5%;background:linear-gradient(45deg, var(--primary), var(--secondary));color:white;position:fixed;width:100%;z-index:100;box-shadow:0 4px 15px rgba(0,0,0,0.2);}.nav-links{display:flex;gap:2rem;}.nav-links a{color:white;text-decoration:none;font-weight:500;transition:0.3s;}.nav-links a:hover{color:var(--accent);transform:translateY(-2px);}.hero{height:100vh;background:linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('https://source.unsplash.com/1600x900/?travel');background-size:cover;display:flex;align-items:center;justify-content:center;padding-top:60px;}.hero-content{text-align:center;color:white;}.hero h1{font-size:3.5rem;margin-bottom:2rem;text-shadow:2px 2px 4px rgba(0,0,0,0.5);}.search-box{background:rgba(255,255,255,0.9);padding:2rem;border-radius:15px;display:grid;grid-template-columns:repeat(3, 1fr) auto;gap:1rem;box-shadow:0 8px 32px rgba(0,0,0,0.3);}.search-box input{padding:12px;border:2px solid #ddd;border-radius:8px;font-size:1rem;}.cta{background:linear-gradient(45deg, var(--primary), var(--secondary));color:white;border:none;padding:12px 30px;border-radius:8px;cursor:pointer;font-weight:bold;transition:0.3s;}.cta:hover{transform:translateY(-2px);box-shadow:0 5px 15px rgba(0,0,0,0.3);}.destinations{padding:4rem 5%;}.destination-grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));gap:2rem;margin-top:2rem;}.destination-card{border-radius:15px;overflow:hidden;box-shadow:0 5px 15px rgba(0,0,0,0.2);transition:0.3s;}.destination-card:hover{transform:translateY(-10px);}.destination-card img{width:100%;height:250px;object-fit:cover;transition:0.3s;}.destination-card:hover img{transform:scale(1.05);}.destination-card h3{padding:1rem;color:var(--primary);}.destination-card p{padding:0 1rem 1rem;color:var(--accent);font-weight:bold;}@media (max-width:768px){.search-box{grid-template-columns:1fr;}.nav-links{display:none;}}
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="brand">TravelBuddy ✈️</div>
+        <div class="nav-links">
+            <a href="#home">Home</a>
+            <a href="#flights">Flights</a>
+            <a href="#hotels">Hotels</a>
+            <a href="#offers">Offers</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="hero" id="home">
+        <div class="hero-content">
+            <h1>Your Dream Vacation Awaits</h1>
+            <div class="search-box">
+                <input type="text" placeholder="Enter Destination">
+                <input type="date" placeholder="Check-in">
+                <input type="date" placeholder="Check-out">
+                <button class="cta">Search Now</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Featured Destinations -->
+    <section class="destinations">
+        <h2>Popular Destinations</h2>
+        <div class="destination-grid">
+            <div class="destination-card">
+                <img src="https://source.unsplash.com/400x300/?maldives" alt="Maldives">
+                <h3>Maldives</h3>
+                <p>From ₹45,999</p>
+            </div>
+            <div class="destination-card">
+                <img src="https://source.unsplash.com/400x300/?bali" alt="Bali">
+                <h3>Bali</h3>
+                <p>From ₹32,999</p>
+            </div>
+            <div class="destination-card">
+                <img src="https://source.unsplash.com/400x300/?switzerland" alt="Switzerland">
+                <h3>Switzerland</h3>
+                <p>From ₹89,999</p>
+            </div>
+        </div>
+    </section>
+
+    <script>
+    // JavaScript from app.js
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            document.querySelector(this.getAttribute('href')).scrollIntoView({
+                behavior: 'smooth'
+            });
+        });
+    });
+
+    window.addEventListener('scroll', () => {
+        const cards = document.querySelectorAll('.destination-card');
+        cards.forEach(card => {
+            const cardTop = card.getBoundingClientRect().top;
+            if(cardTop < window.innerHeight - 100) {
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }
+        });
+    });
+    </script>
+</body>
+</html>

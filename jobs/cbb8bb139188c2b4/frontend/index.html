@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dream2Design Travels</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">DreamTravels</div>
+            <ul>
+                <li><a href="#flights">Flights</a></li>
+                <li><a href="#hotels">Hotels</a></li>
+                <li><a href="#packages">Packages</a></li>
+                <li><a href="#login" class="login-btn">Login/Signup</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <div class="search-container">
+        <form id="searchForm">
+            <div class="trip-type">
+                <button type="button" class="active">Round Trip</button>
+                <button type="button">One Way</button>
+            </div>
+            <div class="input-group">
+                <input type="text" placeholder="From City">
+                <input type="text" placeholder="To City">
+            </div>
+            <div class="input-group">
+                <input type="date" placeholder="Departure">
+                <input type="date" placeholder="Return">
+            </div>
+            <input type="number" placeholder="Travellers">
+            <button type="submit">Search Flights</button>
+        </form>
+    </div>
+
+    <section class="deals">
+        <h2>Hot Deals</h2>
+        <div class="deal-cards">
+            <div class="card">
+                <img src="https://via.placeholder.com/300x200" alt="Goa Package">
+                <h3>Goa Getaway</h3>
+                <p>₹15,999 per person</p>
+            </div>
+            <div class="card">
+                <img src="https://via.placeholder.com/300x200" alt="Kerala Package">
+                <h3>Kerala Special</h3>
+                <p>₹21,999 per person</p>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>Company</h4>
+                <ul>
+                    <li>About Us</li>
+                    <li>Careers</li>
+                    <li>Contact</li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Support</h4>
+                <ul>
+                    <li>FAQs</li>
+                    <li>Terms</li>
+                    <li>Privacy</li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,281 @@
+/* =========================
+   VS Code Dark+ Inspired UI
+   ========================= */
+
+/* Base / Reset */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root{
+  --bg-0:#0f111a;          /* editor/bg */
+  --bg-1:#111111;          /* panels */
+  --bg-2:#1f2430;          /* tab/file headers */
+  --bg-3:#0b0e14;          /* even darker */
+  --border:#2a2f3a;
+  --muted:#9aa4b2;
+  --text:#ffffff;
+  --accent:#3b82f6;        /* blue */
+  --shadow:0 1px 0 rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.02);
+}
+
+html,body{height:100%}
+body{
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, "Helvetica Neue", Arial;
+  background: var(--bg-0);
+  color: var(--text);
+  display:flex;
+  flex-direction:column;
+}
+
+/* Topbar */
+.topbar{
+  height: 55px;
+  background: linear-gradient(180deg, black, #ff00000d);
+  padding: 0 14px;
+  display:flex; align-items:center; justify-content:space-between;
+  box-shadow: var(--shadow);
+}
+.topbar h2{ font-size:14px; letter-spacing:.3px; color:var(--text); font-style: italic; }
+.project-name{ color:var(--muted); font-size:12px }
+/* Download button */
+.download-btn {
+  background: #003aff54;
+  border: 1px solid blue;
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  margin-left: 12px;
+}
+.download-btn[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Main Split */
+.main-layout{ display:flex; flex:1; min-height:0; }
+
+/* Sidebar (video stays behind content) */
+.sidebar{
+  position: relative;
+  overflow: hidden;
+  width: 360px;
+  background: var(--bg-1);
+  display: flex;
+  flex-direction: column;
+  min-width: 260px;
+  max-width: 520px;
+}
+.sidebar .bg-video{
+  position:absolute; inset:0; width:100%; height:100%;
+  object-fit:cover; opacity:.28; z-index:0;
+}
+
+/* stack above video */
+.chat-messages, .chat-input { position: relative; z-index: 1; }
+
+/* CHAT — WhatsApp-like bubbles */
+.chat-messages{
+  flex:1;
+  padding: 14px 12px 84px;   /* bottom pad so input never overlaps */
+  overflow:auto;
+  background: transparent;
+}
+.message{
+  display: inline-block;
+  max-width: 82%;
+  margin: 6px 0;
+  padding: 10px 12px;
+  font-size: 13.5px; line-height: 1.45;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.06);
+  background: rgba(0,0,0,.35);
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+  box-shadow: 0 2px 12px rgba(0,0,0,.15);
+}
+.message.user{
+  margin-left: auto;
+  background: #0f2a6b;                 /* blue bubble */
+  border-color: rgba(59,130,246,.35);
+  border-bottom-right-radius: 4px;
+}
+.message.ai{
+  margin-right: auto;
+  background: #1f2430;                 /* gray bubble */
+  border-bottom-left-radius: 4px;
+}
+
+/* code blocks inside AI messages */
+.message pre{
+  margin-top: 8px;
+  padding: 10px;
+  border-radius: 8px;
+  background: #0e0e0e;
+  border: 1px solid #1f2733;
+  overflow: auto;
+  font-family: Menlo, Monaco, "Courier New", monospace;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+/* input row pinned to bottom */
+.chat-input{
+  margin-top: auto;
+  display:flex; gap:8px; padding:10px;
+  background: rgba(0,0,0,.35);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid #1b2230;
+}
+.chat-input textarea{
+  flex:1; resize:none; min-height:42px; max-height:120px;
+  background:#10131a; color:var(--text);
+  border:1px solid #22304a; border-radius:8px; padding:10px 12px;
+  font-size:13.5px; outline:none;
+}
+.chat-input textarea:focus{ border-color:#2b5cff; box-shadow:0 0 0 2px rgba(59,130,246,.25); }
+.chat-input button{
+  background: #2b5cff; color:#fff; border:none; border-radius:8px;
+  padding: 0 16px; font-size:13.5px; cursor:pointer; height:42px;
+}
+.chat-input button:hover{ background:#204bdf }
+
+
+
+/* 🔹 Shared background video style */
+.bg-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.25;         /* subtle overlay */
+  z-index: 0;
+}
+
+/* Workbench container updated */
+.workbench {
+  position: relative;    /* allow absolute video layer */
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--bg-0);
+  overflow: hidden;
+}
+
+/* Put content above the video */
+.workbench > *:not(.bg-video) {
+  position: relative;
+  z-index: 1;
+}
+
+
+/* Tabs ribbon (Code / Preview) */
+.tabs{
+  display:flex; align-items:center; height:45px;
+  background: #1b1b1b;
+  border-bottom:1px solid var(--border);
+  border-top:1px solid var(--border);
+  gap:2px; padding:0 6px;
+}
+.tabs button{
+  appearance:none; border:none; background:transparent;
+  height:80%; padding: 0 12px; color: var(--muted);
+  font-size:12px; cursor:pointer; border-top-left-radius:6px; border-top-right-radius:6px;
+}
+.tabs button:hover{ color:var(--text) }
+.tabs button.active{
+  color:var(--text);
+  background: #2d2d2d;
+  border-left:1px solid var(--border);
+  border-right:1px solid var(--border);
+  border-top:1px solid var(--border);
+  border-bottom: 2px solid var(--accent);
+}
+
+/* Editor Area Split */
+.editor-area{ flex:1; display:flex; min-height:0; }
+
+/* File Explorer (VS-Code style) */
+.file-explorer{
+  width: 250px;         /* change explorer width here */
+  background: #1b1b1b;
+  border-right:1px solid var(--border);
+  padding: 6px 0;
+  font-size: 12.5px;
+  color: var(--muted);
+  user-select:none;
+  overflow:auto;
+}
+#file-tree{ list-style:none; padding: 4px 6px; }
+#file-tree ul{ list-style:none; padding-left: 14px; }
+#file-tree li{
+  position:relative;
+  padding: 4px 8px 4px 22px;
+  border-radius:4px; margin:1px 4px;
+  cursor:pointer; white-space:nowrap; text-overflow:ellipsis; overflow:hidden;
+}
+#file-tree li::before{
+  content: "";
+  font-family: system-ui, -apple-system, Segoe UI, Roboto;
+  position:absolute; left:6px; top:4px; opacity:.7;
+}
+#file-tree li:hover{ background:#22283a; color:#dce3ea; }
+#file-tree li.active{ background:#1f2937; color:#e8eef7; outline:1px solid #2b4acb; }
+
+/* Editor container + tabs */
+.editor-container{ flex:1; display:flex; flex-direction:column; min-width:0; }
+
+/* File tabs like VS-Code */
+.editor-tabs{
+  height:32px; display:flex; align-items:center; gap:6px;
+  background: #131313;
+  padding: 0 8px;
+}
+.editor-tabs span{
+  display:inline-flex; align-items:center; gap:8px;
+  padding: 5px 10px; font-size:12px; color: var(--muted);
+  background:#23283a; border:1px solid #23283a; border-bottom:none;
+  border-top-left-radius:6px; border-top-right-radius:6px;
+  cursor:pointer; max-width: 220px; text-overflow: ellipsis; overflow:hidden;
+}
+.editor-tabs span:hover{ color:#dbe7ff }
+.editor-tabs span.active{
+  color:#e8eef7; background: var(--bg-0);
+  border-left:1px solid var(--border);
+  border-right:1px solid var(--border);
+  border-top:1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+/* Monaco mount area (SIZE CONTROL HERE) */
+.editor{
+  flex: 1;           
+  min-height: 0;
+  background: #131313;
+  
+}
+
+/* Preview Panel */
+.preview-area{ flex:1; display:none; min-height:0; }
+.preview-area iframe{
+  width:100%; height:100%; border:none; background:#fff;
+}
+
+/* Scrollbars */
+*::-webkit-scrollbar{ width:12px; height:12px }
+*::-webkit-scrollbar-track{ background: transparent; }
+*::-webkit-scrollbar-thumb{
+  background: #2b3344; border-radius:10px; border:3px solid transparent; background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover{ background:#36405a; border-color:transparent; }
+
+/* Small screens */
+@media (max-width: 1100px){
+  .sidebar{ width:280px }
+  .file-explorer{ width:200px }
+}
+@media (max-width: 900px){
+  .sidebar{ display:none }
+}

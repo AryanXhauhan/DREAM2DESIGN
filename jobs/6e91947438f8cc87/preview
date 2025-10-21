@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preview - TradeMaster Pro</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Arial', sans-serif;
+            background: #0f1a2f;
+            color: #fff;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px 50px;
+            background: #16213e;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .balance-box {
+            padding: 10px 20px;
+            background: #1a2a4a;
+            border-radius: 5px;
+        }
+        .price-ticker {
+            display: flex;
+            gap: 30px;
+            padding: 15px;
+            background: #1a2a4a;
+            margin: 20px;
+            border-radius: 5px;
+        }
+        .ticker-item .up { color: #2ecc71; }
+        .ticker-item .down { color: #e74c3c; }
+        .chart-container {
+            height: 400px;
+            background: #1a2a4a;
+            margin: 20px;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        .quick-trade {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin: 20px;
+        }
+        button {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .buy-btn { background: #2ecc71; color: white; }
+        .sell-btn { background: #e74c3c; color: white; }
+        .recent-trades {
+            margin: 20px;
+            padding: 20px;
+            background: #1a2a4a;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">TradeMaster Pro</div>
+        <div class="balance-box">
+            <span>Balance: $10,000</span>
+        </div>
+    </header>
+
+    <main>
+        <div class="price-ticker">
+            <div class="ticker-item">BTC/USD: $63,420 <span class="up">+2.4%</span></div>
+            <div class="ticker-item">ETH/USD: $3,150 <span class="down">-1.2%</span></div>
+        </div>
+
+        <div class="chart-container" id="mainChart">
+            <!-- Chart placeholder -->
+            <div style="color: #666; text-align: center; margin-top: 180px">
+                Trading chart integration area
+            </div>
+        </div>
+
+        <div class="quick-trade">
+            <button class="buy-btn" onclick="executeTrade('buy')">BUY</button>
+            <button class="sell-btn" onclick="executeTrade('sell')">SELL</button>
+        </div>
+
+        <div class="recent-trades">
+            <h3>Recent Trades</h3>
+            <div id="tradeList"></div>
+        </div>
+    </main>
+
+    <script>
+        function executeTrade(type) {
+            const pair = 'BTC/USD';
+            const price = type === 'buy' ? 63420 : 63350;
+            const timestamp = new Date().toLocaleTimeString();
+            
+            const tradeEntry = document.createElement('div');
+            tradeEntry.innerHTML = `${timestamp} - ${type.toUpperCase()} ${pair} @ $${price}`;
+            tradeEntry.style.color = type === 'buy' ? '#2ecc71' : '#e74c3c';
+            
+            document.getElementById('tradeList').prepend(tradeEntry);
+        }
+
+        setInterval(() => {
+            const priceElements = document.querySelectorAll('.ticker-item');
+            priceElements.forEach(el => {
+                const currentPrice = parseFloat(el.innerText.match(/\d+,\d+/)[0].replace(',',''));
+                const newPrice = currentPrice + (Math.random() * 200 - 100);
+                el.innerHTML = el.innerText.replace(/\$\d+,\d+/, `$${newPrice.toLocaleString('en-US', {maximumFractionDigits: 0})}`);
+            });
+        }, 3000);
+    </script>
+</body>
+</html>

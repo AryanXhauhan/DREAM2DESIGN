@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Travel Booking Preview</title>
+    <style>
+        /* Simplified CSS for preview */
+        body { margin:0; font-family:Arial }
+        .header { background: linear-gradient(135deg,#1e3c72,#2a5298); color:white; padding-bottom:100px }
+        nav { display:flex; justify-content:space-between; padding:20px 50px }
+        .logo { font-size:28px; font-weight:bold }
+        .nav-items { display:flex; gap:30px; align-items:center }
+        .nav-items a { color:white; text-decoration:none }
+        .search-container { background:rgba(255,255,255,0.9); border-radius:15px; padding:30px; max-width:1000px; margin:30px auto }
+        .search-form { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:20px }
+        .form-group input, .form-group select { width:100%; padding:12px; border:1px solid #ddd; border-radius:8px }
+        .search-btn { background:#ff6b6b; color:white; padding:15px; border:none; border-radius:8px; cursor:pointer }
+        .deal-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:30px; padding:50px }
+        .card { background:white; border-radius:15px; overflow:hidden; box-shadow:0 5px 15px rgba(0,0,0,0.1) }
+        .card img { width:100%; height:200px; object-fit:cover }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <nav>
+            <div class="logo">TravelEase</div>
+            <div class="nav-items">
+                <a href="#" class="active">Flights</a>
+                <a href="#">Hotels</a>
+                <a href="#">Sign in</a>
+            </div>
+        </nav>
+        <div class="hero">
+            <div class="search-container">
+                <div class="tabs">
+                    <button class="active">Flights</button>
+                    <button>Hotels</button>
+                </div>
+                <form class="search-form">
+                    <div class="form-group">
+                        <label>From</label>
+                        <input placeholder="Delhi (DEL)">
+                    </div>
+                    <div class="form-group">
+                        <label>To</label>
+                        <input placeholder="Mumbai (BOM)">
+                    </div>
+                    <div class="form-group">
+                        <label>Departure</label>
+                        <input type="date">
+                    </div>
+                    <div class="form-group">
+                        <label>Return</label>
+                        <input type="date">
+                    </div>
+                    <div class="form-group">
+                        <label>Travellers</label>
+                        <select>
+                            <option>1 Adult</option>
+                            <option>2 Adults</option>
+                        </select>
+                    </div>
+                    <button class="search-btn">Search 🔍</button>
+                </form>
+            </div>
+        </div>
+    </header>
+
+    <section class="deals">
+        <h2>Featured Deals</h2>
+        <div class="deal-cards">
+            <div class="card">
+                <img src="https://cdn.pixabay.com/photo/2016/11/18/17/20/living-room-1835923_1280.jpg" alt="Hotel">
+                <div class="card-content">
+                    <h3>Luxury Resort Stay</h3>
+                    <p class="price">₹25,999</p>
+                    <p>5 Nights with Breakfast</p>
+                </div>
+            </div>
+            <div class="card">
+                <img src="https://cdn.pixabay.com/photo/2017/12/16/22/22/bora-bora-3023437_1280.jpg" alt="Beach">
+                <div class="card-content">
+                    <h3>Beach Paradise</h3>
+                    <p class="price">₹35,999</p>
+                    <p>All Inclusive Package</p>
+                </div>
+            </div>
+        </div>
+    </section>
+</body>
+</html>

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preview - DreamTravels</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        header {
+            background-color: #003b95;
+            color: white;
+            padding: 1rem;
+        }
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        ul {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+        .login-btn {
+            background-color: #ff6d00;
+            padding: 8px 20px;
+            border-radius: 4px;
+        }
+        .search-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background-color: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .trip-type {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .trip-type button {
+            padding: 8px 16px;
+            border: none;
+            cursor: pointer;
+        }
+        .trip-type button.active {
+            background-color: #003b95;
+            color: white;
+        }
+        .input-group {
+            display: flex;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        input {
+            padding: 10px;
+            width: 100%;
+            border: 1px solid #ddd;
+        }
+        .deals {
+            max-width: 1200px;
+            margin: 2rem auto;
+        }
+        .deal-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        .card {
+            border: 1px solid #ddd;
+            padding: 1rem;
+            transition: transform 0.2s;
+        }
+        footer {
+            background-color: #f5f5f5;
+            padding: 2rem;
+            margin-top: 3rem;
+        }
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            gap: 3rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">DreamTravels</div>
+            <ul>
+                <li><a href="#flights">Flights</a></li>
+                <li><a href="#hotels">Hotels</a></li>
+                <li><a href="#packages">Packages</a></li>
+                <li><a href="#login" class="login-btn">Login/Signup</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <div class="search-container">
+        <form id="searchForm">
+            <div class="trip-type">
+                <button type="button" class="active">Round Trip</button>
+                <button type="button">One Way</button>
+            </div>
+            <div class="input-group">
+                <input type="text" placeholder="From City">
+                <input type="text" placeholder="To City">
+            </div>
+            <div class="input-group">
+                <input type="date" placeholder="Departure">
+                <input type="date" placeholder="Return">
+            </div>
+            <input type="number" placeholder="Travellers">
+            <button type="submit">Search Flights</button>
+        </form>
+    </div>
+
+    <section class="deals">
+        <h2>Hot Deals</h2>
+        <div class="deal-cards">
+            <div class="card">
+                <img src="https://via.placeholder.com/300x200" alt="Goa Package">
+                <h3>Goa Getaway</h3>
+                <p>₹15,999 per person</p>
+            </div>
+            <div class="card">
+                <img src="https://via.placeholder.com/300x200" alt="Kerala Package">
+                <h3>Kerala Special</h3>
+                <p>₹21,999 per person</p>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>Company</h4>
+                <ul>
+                    <li>About Us</li>
+                    <li>Careers</li>
+                    <li>Contact</li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Support</h4>
+                <ul>
+                    <li>FAQs</li>
+                    <li>Terms</li>
+                    <li>Privacy</li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('searchForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            alert('Searching for flights...');
+        });
+
+        document.querySelectorAll('.trip-type button').forEach(button => {
+            button.addEventListener('click', () => {
+                document.querySelector('.trip-type button.active').classList.remove('active');
+                button.classList.add('active');
+            });
+        });
+
+        document.querySelectorAll('.card').forEach(card => {
+            card.addEventListener('mouseover', () => {
+                card.style.transform = 'translateY(-5px)';
+            });
+            card.addEventListener('mouseout', () => {
+                card.style.transform = 'none';
+            });
+        });
+    </script>
+</body>
+</html>

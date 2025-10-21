@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Dream2Design - Generator</title>
+  <link rel="stylesheet" href="generator.css"/>
+</head>
+<body>
+  <header class="topbar">
+    <h2>Dream2Design</h2>
+    <div class="project-name">AI Project</div>
+
+    <!-- DOWNLOAD BUTTON (hidden until job done) -->
+    <div style="margin-left:16px;">
+      <button id="download-btn" class="download-btn" style="display:none;" title="Download generated project as ZIP">
+        Download
+      </button>
+    </div>
+  </header>
+
+  <div class="main-layout">
+    <!-- Sidebar (chat) -->
+    <aside class="sidebar">
+      <!-- background video layer -->
+      <video class="bg-video" autoplay muted loop playsinline>
+        <source src="assets/bg.MOV" type="video/mp4" />
+      </video>
+
+      <!-- chat stack -->
+      <div class="chat-messages" id="chat-messages"></div>
+
+      <div class="chat-input">
+        <textarea id="chat-box" placeholder="Ask Dream2Design..."></textarea>
+        <button id="chat-send">Send</button>
+      </div>
+    </aside>
+
+    <!-- Workbench -->
+    <main class="workbench">
+      <!-- background video layer -->
+      <video class="bg-video" autoplay muted loop playsinline>
+        <source src="/public/assets/bg.MOV" type="video/mp4" />
+      </video>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <button id="code-tab" class="active">Code</button>
+        <button id="preview-tab">Preview</button>
+      </div>
+
+      <!-- Editor area -->
+      <section id="editor-area" class="editor-area">
+        <div class="file-explorer">
+          <ul id="file-tree"></ul>
+        </div>
+        <div class="editor-container">
+          <div class="editor-tabs" id="editor-tabs"></div>
+          <div id="editor" class="editor"></div>
+        </div>
+      </section>
+
+      <!-- Preview area -->
+      <section id="preview-area" class="preview-area">
+        <iframe id="preview-frame" src="about:blank"></iframe>
+      </section>
+    </main>
+  </div>
+
+  <!-- Required libs for ZIP download (must be before generator.js) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+  <!-- Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js"></script>
+  <script src="generator.js"></script>
+</body>
+</html>

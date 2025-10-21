@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preview - SI News Hub</title>
+    <style>
+        body { margin: 0; font-family: Arial, sans-serif; }
+        header { background: #1a1a1a; color: white; padding: 1rem; text-align: center; }
+        nav { display: flex; justify-content: center; gap: 2rem; padding: 1rem; }
+        nav a { color: white; text-decoration: none; }
+        .featured-article { padding: 2rem; text-align: center; }
+        .featured-article img { width: 100%; max-width: 800px; height: auto; }
+        .news-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; padding: 2rem; }
+        .news-card { background: #f5f5f5; padding: 1rem; border-radius: 8px; }
+        footer { background: #1a1a1a; color: white; text-align: center; padding: 1rem; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Sports Illustrated</h1>
+        <nav>
+            <a href="#home">Home</a>
+            <a href="#news">News</a>
+            <a href="#videos">Videos</a>
+        </nav>
+    </header>
+
+    <section class="featured-article">
+        <img src="https://via.placeholder.com/800x400" alt="Featured Story">
+        <h2>Top Story Headline</h2>
+        <p>Breaking sports news and exclusive analysis</p>
+    </section>
+
+    <div class="news-grid">
+        <div class="news-card">
+            <h3>Latest Update</h3>
+            <p>Game highlights and player insights</p>
+        </div>
+        <div class="news-card">
+            <h3>Player Spotlight</h3>
+            <p>Exclusive athlete interviews</p>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2023 Sports Illustrated. All rights reserved.</p>
+    </footer>
+    <script>
+        document.querySelectorAll('nav a').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                alert('Navigation link clicked!');
+            });
+        });
+    </script>
+</body>
+</html>
