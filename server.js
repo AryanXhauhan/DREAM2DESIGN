@@ -297,7 +297,7 @@ app.post("/api/generate", upload.array("files", 5), async (req, res) => {
     (async () => {
       try {
         jobs[jobId].status = "processing";
-        jobs[jobId].progress.push("🤖 Calling DeepSeek...");
+        jobs[jobId].progress.push("🤖 Calling AI...");
 
         const systemPrompt = `You are an expert full-stack web developer specializing in modern, production-ready web applications. Generate exceptional, high-quality code that exceeds expectations.
 
