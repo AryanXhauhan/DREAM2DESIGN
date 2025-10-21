@@ -1,1 +1,0 @@
-console.log('Hello, welcome to the login page!');

@@ -3,7 +3,7 @@
     "archiver": "^7.0.1",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
-    "dotenv": "^17.2.1",
+    "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "firebase": "^12.2.1",
     "multer": "^2.0.2",

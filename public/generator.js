@@ -1,16 +1,17 @@
-// generator.js (full updated - includes Download ZIP support)
+// generator.js (fully fixed with all improvements)
 
 // ---------------- Globals & DOM refs ----------------
 const chatMessages = document.getElementById("chat-messages");
-const editorTabs   = document.getElementById("editor-tabs");
-const chatBox      = document.getElementById("chat-box");
-const chatSend     = document.getElementById("chat-send");
-const downloadBtn  = document.getElementById("download-btn");
+const editorTabs = document.getElementById("editor-tabs");
+const chatBox = document.getElementById("chat-box");
+const chatSend = document.getElementById("chat-send");
+let downloadBtn = document.getElementById("download-btn"); // let for re-assignment
 
 let currentJobId = null;
-let openFiles    = {};
-let activeFile   = null;
+let openFiles = {};
+let activeFile = null;
 let editor;
+let pollTimeout = null; // for cleanup
 
 // ---------- UI helpers ----------
 function escapeHTML(s = "") {
@@ -26,7 +27,7 @@ function addBubble(role, html) {
   div.innerHTML = html;
   chatMessages.appendChild(div);
   chatMessages.scrollTop = chatMessages.scrollHeight;
-  return div; // so we can update it (e.g., replace typing…)
+  return div;
 }
 
 function addTextBubble(role, text) {
@@ -40,48 +41,66 @@ function setSendingState(sending) {
 
 // ---------- Typing effect into Monaco ----------
 async function typeIntoEditor(model, content) {
+  if (!model || !content) return;
+  
   model.setValue("");
   const len = content.length;
+  
+  // Skip animation for large files
   if (len > 8000) {
     model.setValue(content);
     return;
   }
+  
+  // Type animation
   for (let i = 0; i <= len; i++) {
     model.setValue(content.slice(0, i));
-    await new Promise(r => setTimeout(r, 6));
+    await new Promise(r => setTimeout(r, 5));
   }
 }
 
 // ---------- Poll Job ----------
 async function pollJob(id) {
+  // Clear any existing timeout
+  if (pollTimeout) {
+    clearTimeout(pollTimeout);
+    pollTimeout = null;
+  }
+
   try {
     const resp = await fetch(`/status/${id}`);
     if (!resp.ok) throw new Error("Status fetch failed");
     const job = await resp.json();
 
     if (job.progress && Array.isArray(job.progress)) {
-      // replace with status bubbles
       chatMessages.innerHTML = "";
       job.progress.forEach(msg => addTextBubble("AI", msg));
     }
 
     if (job.status === "done") {
       addTextBubble("AI", "✅ Project ready!");
-      // Ensure file tree is loaded before enabling download
+      
       try {
-        await loadFileTree(id);
+        const tree = await loadFileTree(id);
+        if (tree && Object.keys(tree).length > 0) {
+          loadPreview(id);
+          onJobDoneShowDownload(id);
+        } else {
+          addTextBubble("AI", "⚠️ No files were generated.");
+        }
       } catch (e) {
-        // ignore errors but continue
+        console.error("Failed to load file tree:", e);
+        addTextBubble("AI", "⚠️ Could not load project files.");
       }
-      loadPreview(id);
-      onJobDoneShowDownload(id);
-    } else if (job.status !== "error") {
-      setTimeout(() => pollJob(id), 1200);
+    } else if (job.status === "error") {
+      addTextBubble("AI", "⚠️ Generation failed. Please try again.");
     } else {
-      addTextBubble("AI", "⚠️ Generation failed.");
+      // Continue polling
+      pollTimeout = setTimeout(() => pollJob(id), 1200);
     }
   } catch (e) {
-    addTextBubble("AI", "⚠️ Could not poll job status.");
+    console.error("Poll error:", e);
+    addTextBubble("AI", "⚠️ Could not check job status.");
   }
 }
 
@@ -101,31 +120,50 @@ async function onSend() {
   addTextBubble("user", text);
   chatBox.value = "";
 
+  let typingNode = null;
+
   try {
     setSendingState(true);
 
     if (!currentJobId) {
-      // Start a new project
-      const form = new FormData();
-      form.append("prompt", text);
+      // YAHAN FIX KARO - FormData properly use karo
+      const formData = new FormData();
+      formData.append("prompt", text);
 
-      const resp = await fetch("/api/generate", { method: "POST", body: form });
+      console.log("Starting new project...");
+      const resp = await fetch("/api/generate", {
+        method: "POST",
+        body: formData  // ✅ FormData send karo (no headers needed)
+      });
+
+      if (!resp.ok) {
+        const errorText = await resp.text();
+        console.error("Server error:", errorText);
+        throw new Error(`Server error: ${resp.status}`);
+      }
+
       const data = await resp.json();
+
       if (!data.jobId) {
         addTextBubble("AI", "⚠️ Failed to start new project.");
         return;
       }
-      currentJobId = data.jobId;
 
+      currentJobId = data.jobId;
+      console.log("Job created:", currentJobId);
+
+      // Reset editor state
       openFiles = {};
       editorTabs.innerHTML = "";
       if (editor) editor.setValue("// Building your project...");
-      addTextBubble("AI", "🤖 Building a fresh project...");
+
+      addTextBubble("AI", "🤖 Building your project...");
       pollJob(currentJobId);
       return;
     }
 
-    const typingNode = addBubble("AI", `<span style="opacity:.8">🤖 typing…</span>`);
+    // Chat with existing project
+    typingNode = addBubble("AI", `<span style="opacity:.8">🤖 typing…</span>`);
 
     const resp = await fetch(`/api/chat/${currentJobId}`, {
       method: "POST",
@@ -133,18 +171,22 @@ async function onSend() {
       body: JSON.stringify({ message: text })
     });
 
+    if (!resp.ok) {
+      throw new Error(`Server error: ${resp.status}`);
+    }
+
     let data;
     try {
       data = await resp.json();
     } catch (err) {
-      typingNode.innerHTML = escapeHTML("⚠️ Server returned invalid JSON.");
+      typingNode.innerHTML = escapeHTML("⚠️ Server returned invalid response.");
       return;
     }
 
     const replyText = typeof data.reply === "string" ? data.reply : "";
     typingNode.innerHTML = replyText
       ? `<div>${escapeHTML(replyText)}</div>`
-      : `<div>⏳ The model didn’t send a message. Try again.</div>`;
+      : `<div>⏳ The model didn't respond. Try again.</div>`;
 
     if (data.filesUpdated) {
       await loadFileTree(currentJobId);
@@ -156,31 +198,48 @@ async function onSend() {
             const respFile = await fetch(
               `/api/jobs/${currentJobId}/file?path=${encodeURIComponent(filePath)}`
             );
+
+            if (!respFile.ok) continue;
+
             const content = await respFile.text();
 
+            // Check if file already open
             let model = openFiles[filePath];
             if (!model) {
               model = monaco.editor.createModel("", undefined, monaco.Uri.file(filePath));
               openFiles[filePath] = model;
 
-              const tab = document.createElement("span");
-              tab.textContent = filePath.split("/").pop();
-              tab.title = filePath;
-              tab.dataset.path = filePath;
-              tab.addEventListener("click", () => setActiveTab(filePath));
-              editorTabs.appendChild(tab);
+              // Check if tab already exists
+              const existingTab = [...editorTabs.children].find(
+                t => t.dataset.path === filePath
+              );
+
+              if (!existingTab) {
+                const tab = document.createElement("span");
+                tab.textContent = filePath.split("/").pop();
+                tab.title = filePath;
+                tab.dataset.path = filePath;
+                tab.addEventListener("click", () => setActiveTab(filePath));
+                editorTabs.appendChild(tab);
+              }
             }
 
             setActiveTab(filePath);
             await typeIntoEditor(model, content);
-          } catch {
+          } catch (e) {
+            console.error(`Failed to open ${filePath}:`, e);
             addTextBubble("AI", `⚠️ Failed to open ${filePath}`);
           }
         }
       }
     }
   } catch (err) {
-    addTextBubble("AI", `⚠️ Error: ${err.message}`);
+    console.error("Send error:", err);
+    if (typingNode) {
+      typingNode.innerHTML = `<div>${escapeHTML(`⚠️ Error: ${err.message}`)}</div>`;
+    } else {
+      addTextBubble("AI", `⚠️ Error: ${err.message}`);
+    }
   } finally {
     setSendingState(false);
   }
@@ -191,18 +250,27 @@ async function loadFileTree(jobId) {
   try {
     const resp = await fetch(`/api/jobs/${jobId}/files`);
     if (!resp.ok) throw new Error("Could not fetch file tree");
+    
     const tree = await resp.json();
+    
+    if (!tree || typeof tree !== "object") {
+      throw new Error("Invalid file tree data");
+    }
+    
     const fileTreeEl = document.getElementById("file-tree");
     fileTreeEl.innerHTML = "";
     renderTree(tree, "", fileTreeEl, jobId);
     return tree;
-  } catch {
+  } catch (e) {
+    console.error("File tree error:", e);
     addTextBubble("AI", "⚠️ Could not load file tree.");
     return {};
   }
 }
 
 function renderTree(tree, prefix, parent, jobId) {
+  if (!tree || typeof tree !== "object") return;
+  
   for (const [name, value] of Object.entries(tree)) {
     const li = document.createElement("li");
     li.textContent = name;
@@ -226,6 +294,7 @@ function renderTree(tree, prefix, parent, jobId) {
 // ---------- Open file in Monaco ----------
 async function openFile(jobId, filePath) {
   try {
+    // If already open, just switch to it
     if (openFiles[filePath]) {
       setActiveTab(filePath);
       return;
@@ -234,29 +303,42 @@ async function openFile(jobId, filePath) {
     const resp = await fetch(
       `/api/jobs/${jobId}/file?path=${encodeURIComponent(filePath)}`
     );
+    
     if (!resp.ok) throw new Error("File fetch failed");
     const content = await resp.text();
 
     const model = monaco.editor.createModel("", undefined, monaco.Uri.file(filePath));
     openFiles[filePath] = model;
 
-    const tab = document.createElement("span");
-    tab.textContent = filePath.split("/").pop();
-    tab.title = filePath;
-    tab.dataset.path = filePath;
-    tab.addEventListener("click", () => setActiveTab(filePath));
-    editorTabs.appendChild(tab);
+    // Check if tab already exists
+    const existingTab = [...editorTabs.children].find(t => t.dataset.path === filePath);
+    
+    if (!existingTab) {
+      const tab = document.createElement("span");
+      tab.textContent = filePath.split("/").pop();
+      tab.title = filePath;
+      tab.dataset.path = filePath;
+      tab.addEventListener("click", () => setActiveTab(filePath));
+      editorTabs.appendChild(tab);
+    }
 
     setActiveTab(filePath);
     await typeIntoEditor(model, content);
   } catch (e) {
+    console.error(`Could not open file ${filePath}:`, e);
     addTextBubble("AI", `⚠️ Could not open file: ${filePath}`);
   }
 }
 
 function setActiveTab(filePath) {
   activeFile = filePath;
-  if (openFiles[filePath] && editor) editor.setModel(openFiles[filePath]);
+  
+  // Check if model exists before setting
+  if (openFiles[filePath] && editor) {
+    editor.setModel(openFiles[filePath]);
+  }
+  
+  // Update tab UI
   [...editorTabs.children].forEach(tab =>
     tab.classList.toggle("active", tab.dataset.path === filePath)
   );
@@ -265,25 +347,41 @@ function setActiveTab(filePath) {
 // ---------- Preview ----------
 function loadPreview(jobId) {
   const iframe = document.getElementById("preview-frame");
-  iframe.src = `/api/jobs/${jobId}/preview?ts=${Date.now()}`;
+  if (iframe) {
+    iframe.src = `/api/jobs/${jobId}/preview?ts=${Date.now()}`;
+  }
 }
 
 // ---------- Tabs ----------
-document.getElementById("code-tab").addEventListener("click", () => {
-  document.getElementById("editor-area").style.display = "flex";
-  document.getElementById("preview-area").style.display = "none";
-});
-document.getElementById("preview-tab").addEventListener("click", () => {
-  document.getElementById("editor-area").style.display = "none";
-  document.getElementById("preview-area").style.display = "flex";
-});
+const codeTab = document.getElementById("code-tab");
+const previewTab = document.getElementById("preview-tab");
+
+if (codeTab) {
+  codeTab.addEventListener("click", () => {
+    const editorArea = document.getElementById("editor-area");
+    const previewArea = document.getElementById("preview-area");
+    if (editorArea) editorArea.style.display = "flex";
+    if (previewArea) previewArea.style.display = "none";
+  });
+}
+
+if (previewTab) {
+  previewTab.addEventListener("click", () => {
+    const editorArea = document.getElementById("editor-area");
+    const previewArea = document.getElementById("preview-area");
+    if (editorArea) editorArea.style.display = "none";
+    if (previewArea) previewArea.style.display = "flex";
+  });
+}
 
 // ------------------ DOWNLOAD ZIP SUPPORT ------------------
 
 // Flatten nested tree object into array of file paths
 function flattenTree(treeObj, prefix = "") {
   const files = [];
-  for (const [name, value] of Object.entries(treeObj || {})) {
+  if (!treeObj || typeof treeObj !== "object") return files;
+  
+  for (const [name, value] of Object.entries(treeObj)) {
     if (value === "file") {
       files.push(prefix + name);
     } else {
@@ -296,25 +394,36 @@ function flattenTree(treeObj, prefix = "") {
 // Show/enable the download button when job done
 function onJobDoneShowDownload(jobId) {
   if (!downloadBtn) return;
+  
   downloadBtn.style.display = "inline-block";
   downloadBtn.disabled = false;
   downloadBtn.textContent = "Download";
-  // attach click handler if not already
-  if (!downloadBtn._attached) {
-    downloadBtn.addEventListener("click", async () => {
-      if (!currentJobId) {
-        alert("No job active to download.");
-        return;
-      }
-      await downloadProjectZip(currentJobId);
-    });
-    downloadBtn._attached = true;
-  }
+  
+  // Remove old listener by cloning
+  const newBtn = downloadBtn.cloneNode(true);
+  downloadBtn.parentNode.replaceChild(newBtn, downloadBtn);
+  downloadBtn = newBtn;
+  
+  // Add fresh listener
+  downloadBtn.addEventListener("click", async () => {
+    if (!currentJobId) {
+      alert("No project to download.");
+      return;
+    }
+    await downloadProjectZip(currentJobId);
+  });
 }
 
 // Try server-side zip endpoint first; fallback to client-side zip via JSZip
 async function downloadProjectZip(jobId) {
   if (!downloadBtn) return;
+  
+  // Check for saveAs function
+  if (typeof saveAs !== "function") {
+    alert("FileSaver.js library not loaded. Please refresh the page.");
+    return;
+  }
+  
   downloadBtn.disabled = true;
   const originalText = downloadBtn.textContent || "Download";
   downloadBtn.textContent = "Preparing…";
@@ -330,32 +439,37 @@ async function downloadProjectZip(jobId) {
       return;
     }
   } catch (e) {
-    console.warn("server-side zip endpoint unavailable", e);
+    console.warn("Server-side zip unavailable, using client-side fallback", e);
   }
 
   // Client-side fallback
   try {
     const respTree = await fetch(`/api/jobs/${jobId}/files`);
     if (!respTree.ok) throw new Error("Could not fetch file tree");
+    
     const tree = await respTree.json();
     const paths = flattenTree(tree);
 
     if (!paths.length) throw new Error("No files found to download");
 
-    const JSZipLib = window.JSZip;
-    if (!JSZipLib) throw new Error("JSZip not loaded");
+    // Check JSZip availability
+    if (typeof JSZip !== "function") {
+      throw new Error("JSZip library not loaded. Please refresh the page.");
+    }
 
-    const zip = new JSZipLib();
+    const zip = new JSZip();
     let count = 0;
     const total = paths.length;
 
     for (const p of paths) {
       downloadBtn.textContent = `Preparing ${++count}/${total}…`;
+      
       const fileResp = await fetch(`/api/jobs/${jobId}/file?path=${encodeURIComponent(p)}`);
       if (!fileResp.ok) {
         console.warn("Failed to fetch", p);
         continue;
       }
+      
       const buffer = await fileResp.arrayBuffer();
       zip.file(p, buffer);
     }
@@ -363,6 +477,7 @@ async function downloadProjectZip(jobId) {
     downloadBtn.textContent = "Zipping…";
     const content = await zip.generateAsync({ type: "blob" });
     saveAs(content, `${jobId}.zip`);
+    
   } catch (err) {
     console.error("Download ZIP failed:", err);
     alert("Download failed: " + (err.message || "unknown error"));
@@ -372,17 +487,44 @@ async function downloadProjectZip(jobId) {
   }
 }
 
+// ---------- Cleanup on page unload ----------
+window.addEventListener("beforeunload", () => {
+  if (pollTimeout) {
+    clearTimeout(pollTimeout);
+    pollTimeout = null;
+  }
+  
+  // Dispose all Monaco models
+  Object.values(openFiles).forEach(model => {
+    if (model && typeof model.dispose === "function") {
+      model.dispose();
+    }
+  });
+});
+
 // ---------- Init ----------
 const urlParams = new URLSearchParams(window.location.search);
 currentJobId = urlParams.get("job");
-if (currentJobId) pollJob(currentJobId);
+if (currentJobId) {
+  console.log("Resuming job:", currentJobId);
+  pollJob(currentJobId);
+}
 
-// ---------- Monaco ----------
+// ---------- Monaco Editor ----------
 require.config({
   paths: { "vs": "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs" }
 });
+
 require(["vs/editor/editor.main"], () => {
-  editor = monaco.editor.create(document.getElementById("editor"), {
+  console.log("Monaco Editor loaded");
+  
+  const editorContainer = document.getElementById("editor");
+  if (!editorContainer) {
+    console.error("Editor container not found!");
+    return;
+  }
+  
+  editor = monaco.editor.create(editorContainer, {
     value: "// Waiting for AI to generate files...",
     language: "javascript",
     theme: "vs-dark",
@@ -400,4 +542,6 @@ require(["vs/editor/editor.main"], () => {
     scrollbar: { verticalScrollbarSize: 10, horizontalScrollbarSize: 10 },
     padding: { top: 8, bottom: 8 }
   });
+  
+  console.log("Monaco Editor initialized");
 });

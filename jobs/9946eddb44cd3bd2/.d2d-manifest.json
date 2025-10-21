@@ -1,0 +1,8 @@
+{
+  "files": [
+    "frontend/app.js",
+    "frontend/index.html",
+    "frontend/styles.css",
+    "preview"
+  ]
+}

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Professional Todo List</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><i class="fas fa-tasks"></i> Professional Todo List</h1>
+      <div class="theme-toggle">
+        <i class="fas fa-moon"></i>
+      </div>
+    </header>
+    
+    <main>
+      <div class="input-section">
+        <div class="input-group">
+          <input type="text" id="todo-input" placeholder="Add a new task..." autocomplete="off">
+          <button id="add-btn"><i class="fas fa-plus"></i> Add</button>
+        </div>
+        <div class="filters">
+          <button class="filter-btn active" data-filter="all">All</button>
+          <button class="filter-btn" data-filter="active">Active</button>
+          <button class="filter-btn" data-filter="completed">Completed</button>
+        </div>
+      </div>
+      
+      <div class="todo-stats">
+        <p id="task-count">0 tasks remaining</p>
+        <button id="clear-completed">Clear Completed</button>
+      </div>
+      
+      <ul id="todo-list" class="todo-list">
+        <!-- Todo items will be added here dynamically -->
+      </ul>
+      
+      <div id="empty-state" class="empty-state">
+        <i class="fas fa-clipboard-list"></i>
+        <h3>No tasks yet</h3>
+        <p>Add your first task to get started!</p>
+      </div>
+    </main>
+  </div>
+  
+  <script src="app.js"></script>
+</body>
+</html>

@@ -10,8 +10,8 @@ const fetch = require("node-fetch");
 const app = express();
 
 app.use(cors());
-app.use(express.json({ limit: "6mb" }));
-app.use(express.urlencoded({ extended: true, limit: "6mb" }));
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(express.static(path.join(__dirname, "public")));
 
 const upload = multer({ storage: multer.memoryStorage() });
@@ -19,7 +19,10 @@ const upload = multer({ storage: multer.memoryStorage() });
 // 🔑 OpenRouter Key
 const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY;
 if (!OPENROUTER_KEY) {
-  console.warn("⚠️ Missing OPENROUTER_API_KEY in .env");
+  console.error("❌ CRITICAL: Missing OPENROUTER_API_KEY in .env");
+  process.exit(1);
+} else {
+  console.log("✅ OpenRouter API Key loaded");
 }
 
 /* =========================
@@ -36,7 +39,6 @@ function jobDirOf(jobId) {
   return path.join(JOBS_DIR, jobId);
 }
 
-// safe read JSON
 function readJSONSafe(file, fallback) {
   try {
     if (fs.existsSync(file)) return JSON.parse(fs.readFileSync(file, "utf8"));
@@ -44,7 +46,6 @@ function readJSONSafe(file, fallback) {
   return fallback;
 }
 
-// recursive file lister (relative paths)
 function listAllFilesRecursive(root) {
   const out = [];
   (function walk(dir) {
@@ -59,13 +60,11 @@ function listAllFilesRecursive(root) {
   return out;
 }
 
-// safe write with mkdir -p
 function writeFileSafe(fullPath, content) {
   fs.mkdirSync(path.dirname(fullPath), { recursive: true });
   fs.writeFileSync(fullPath, content, "utf8");
 }
 
-// simple file tree for UI
 function buildTree(dir) {
   const result = {};
   for (const item of fs.readdirSync(dir)) {
@@ -75,8 +74,8 @@ function buildTree(dir) {
   return result;
 }
 
-/* ---- OpenRouter robust helpers ---- */
-async function fetchWithTimeout(url, options = {}, timeoutMs = 45000) {
+/* ---- OpenRouter - Qwen3 Coder with Fallback to DeepSeek ---- */
+async function fetchWithTimeout(url, options = {}, timeoutMs = 90000) {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
@@ -86,12 +85,15 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = 45000) {
   }
 }
 
-// Try one model with retries; return {ok, content, raw, error}
-async function callModelOnce(messages, { model, temperature = 0.3, max_tokens = 4000, retries = 3 }) {
+// Call Qwen3 Coder with fallback to DeepSeek
+async function callQwenCoder(messages, { temperature = 0.3, max_tokens = 12000, retries = 3 }) {
   let lastErr = null;
 
+  // Try Qwen3 Coder first
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
+      console.log(`🔄 Qwen3 Coder - Attempt ${attempt + 1}/${retries}`);
+
       const resp = await fetchWithTimeout("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -100,76 +102,113 @@ async function callModelOnce(messages, { model, temperature = 0.3, max_tokens = 
           "HTTP-Referer": "http://localhost:3000",
           "X-Title": "Dream2Design"
         },
-        body: JSON.stringify({ model, messages, temperature, max_tokens })
-      });
+        body: JSON.stringify({
+          model: "qwen/qwen3-coder:free",
+          messages,
+          temperature,
+          max_tokens
+        })
+      }, 90000);
+
+      console.log(`📡 Status: ${resp.status}`);
 
       const data = await resp.json().catch(() => ({}));
+
       if (!resp.ok) {
-        throw new Error(data?.error?.message || `OpenRouter ${resp.status}`);
+        const errMsg = data?.error?.message || `HTTP ${resp.status}`;
+        console.error(`❌ API Error: ${errMsg}`);
+        throw new Error(errMsg);
       }
 
       const choice = data?.choices?.[0]?.message || {};
-      // DeepSeek R1 sometimes uses reasoning_content
-      const content =
-        (choice.content && String(choice.content).trim()) ||
-        (choice.reasoning_content && String(choice.reasoning_content).trim()) ||
-        "";
+      const content = (choice.content || "").trim();
 
-      if (content) {
-        return { ok: true, content, raw: data };
+      if (!content) {
+        console.warn("⚠️ Empty response from Qwen3 Coder");
+        throw new Error("Empty response from model");
       }
-      lastErr = new Error("Empty content from model");
+
+      console.log(`✅ Received ${content.length} characters`);
+      return { ok: true, content, raw: data };
+
     } catch (e) {
       lastErr = e;
+      console.error(`❌ Attempt ${attempt + 1} failed: ${e.message}`);
+
+      if (attempt < retries - 1) {
+        const delay = 2000 * (attempt + 1);
+        console.log(`⏳ Waiting ${delay}ms before retry...`);
+        await new Promise(r => setTimeout(r, delay));
+      }
     }
-    await new Promise(r => setTimeout(r, 600 * (attempt + 1))); // backoff
   }
 
-  return { ok: false, error: lastErr?.message || "Unknown OpenRouter error" };
-}
+  // Fallback to DeepSeek Chat
+  console.log("🔄 Falling back to DeepSeek Chat...");
+  try {
+    const resp = await fetchWithTimeout("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${OPENROUTER_KEY}`,
+        "HTTP-Referer": "http://localhost:3000",
+        "X-Title": "Dream2Design"
+      },
+      body: JSON.stringify({
+        model: "deepseek/deepseek-chat",
+        messages,
+        temperature,
+        max_tokens
+      })
+    }, 90000);
 
-// Prefer R1, fallback to deepseek-chat if empty/failed
-async function callOpenRouterRobust(messages, opts = {}) {
-  const primary = await callModelOnce(messages, {
-    model: "deepseek/deepseek-r1:free",
-    ...opts
-  });
-  if (primary.ok) return primary;
+    console.log(`📡 DeepSeek Status: ${resp.status}`);
 
-  // fallback to chat model (more consistent plain text)
-  const fallback = await callModelOnce(messages, {
-    model: "deepseek/deepseek-chat",
-    ...opts
-  });
-  if (fallback.ok) return fallback;
+    const data = await resp.json().catch(() => ({}));
 
-  // neither worked
-  return { ok: false, error: fallback.error || primary.error || "Model failed" };
+    if (!resp.ok) {
+      const errMsg = data?.error?.message || `HTTP ${resp.status}`;
+      console.error(`❌ DeepSeek API Error: ${errMsg}`);
+      throw new Error(errMsg);
+    }
+
+    const choice = data?.choices?.[0]?.message || {};
+    const content = (choice.content || "").trim();
+
+    if (!content) {
+      console.warn("⚠️ Empty response from DeepSeek");
+      throw new Error("Empty response from fallback model");
+    }
+
+    console.log(`✅ DeepSeek Received ${content.length} characters`);
+    return { ok: true, content, raw: data };
+
+  } catch (e) {
+    console.error(`❌ DeepSeek fallback failed: ${e.message}`);
+    return { ok: false, error: lastErr?.message || "Both models failed" };
+  }
 }
 
 /* ---- Parsing helpers ---- */
-
-// Extract a JSON object from mixed plain-text + fenced code
 function extractJsonBlock(text) {
   if (!text) return null;
   let t = String(text).trim();
 
-  // strip code fences
-  t = t.replace(/```(?:json|html)?/gi, "```");
+  // Remove code fences
+
   t = t.replace(/```/g, "").trim();
 
-  // quick exact parse
+  // Try direct parse
   try { return JSON.parse(t); } catch (_) {}
 
-  // find a { ... } block (greedy)
+  // Find JSON block
   const m = t.match(/\{[\s\S]*\}/);
   if (!m) return null;
 
-  const candidate = m[0];
   const attempts = [
-    candidate,
-    candidate.replace(/\r/g, ""),
-    candidate.replace(/\\n/g, "\n"),
+    m[0],
+    m[0].replace(/\r/g, ""),
+    m[0].replace(/\\n/g, "\n"),
   ];
 
   for (const s of attempts) {
@@ -178,14 +217,12 @@ function extractJsonBlock(text) {
   return null;
 }
 
-// Normalize AI JSON → { files: {path:content}, preview?: string }
 function normalizeAIJson(text) {
   const parsed = extractJsonBlock(text);
   if (!parsed || typeof parsed !== "object") return null;
-
   if (!parsed.files) return null;
 
-  // support both object and array formats
+  // Convert array format to object
   if (Array.isArray(parsed.files)) {
     const mapped = {};
     for (const f of parsed.files) {
@@ -204,11 +241,8 @@ function normalizeAIJson(text) {
   };
 }
 
-// Find best existing file to overwrite based on extension/name
 function pickBestTarget(currentList, incomingName) {
   const ext = path.extname(incomingName).toLowerCase();
-
-  // exact path present
   if (currentList.includes(incomingName)) return incomingName;
 
   const sameExt = currentList.filter(f => path.extname(f).toLowerCase() === ext);
@@ -216,20 +250,17 @@ function pickBestTarget(currentList, incomingName) {
 
   const rank = (f) => {
     const base = f.split("/").pop().toLowerCase();
-    const folderBonus = f.includes("frontend/") ? -0.5 : 0;
     const scores = {
       ".html": ["index.html", "app.html", "main.html"],
-      ".css":  ["styles.css", "style.css", "main.css", "app.css"],
+      ".css":  ["styles.css", "style.css", "main.css"],
       ".js":   ["app.js", "main.js", "index.js"],
-      ".tsx":  ["app.tsx", "main.tsx", "index.tsx"],
-      ".ts":   ["main.ts", "index.ts", "app.ts"],
     };
     const list = scores[ext] || [];
     const idx = list.indexOf(base);
-    return (idx >= 0 ? idx : 9) + folderBonus;
+    return idx >= 0 ? idx : 9;
   };
 
-  sameExt.sort((a,b)=>rank(a)-rank(b));
+  sameExt.sort((a,b) => rank(a) - rank(b));
   return sameExt[0];
 }
 
@@ -237,7 +268,6 @@ function pickBestTarget(currentList, incomingName) {
    ROUTES
    ========================= */
 
-// ROOT
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "front.html"));
 });
@@ -250,80 +280,148 @@ app.post("/api/generate", upload.array("files", 5), async (req, res) => {
       return res.status(400).json({ error: "⚠️ Prompt required" });
     }
 
+    console.log("\n" + "=".repeat(70));
+    console.log("🚀 NEW GENERATION - Qwen3 Coder");
+    console.log("Prompt:", prompt.slice(0, 120));
+    console.log("=".repeat(70));
+
     const jobId = crypto.randomBytes(8).toString("hex");
-    jobs[jobId] = { id: jobId, status: "queued", progress: ["Job created"], result: null };
+    jobs[jobId] = { id: jobId, status: "queued", progress: ["🎯 Job created"], result: null };
 
     const dir = jobDirOf(jobId);
     fs.mkdirSync(dir, { recursive: true });
 
-    res.json({ jobId }); // immediate response
+    res.json({ jobId });
 
+    // Background processing
     (async () => {
       try {
         jobs[jobId].status = "processing";
         jobs[jobId].progress.push("🤖 Calling DeepSeek...");
 
-        const userPrompt = `
-You are Dream2Design AI.
-User request: "${prompt}"
+        const systemPrompt = `You are an expert full-stack web developer specializing in modern, production-ready web applications. Generate exceptional, high-quality code that exceeds expectations.
 
-IMPORTANT:
-- Return ONLY valid JSON.
-- Use the "files" object with keys as file paths and values as file content.
-- Also return a "preview" field that is a full HTML string for live preview.
-
-Example:
+STRICT REQUIREMENTS:
+1. Return ONLY valid JSON - no explanations, no markdown
+2. Use this exact structure:
 {
   "files": {
-    "frontend/index.html": "<!DOCTYPE html> ...",
-    "frontend/styles.css": "body { ... }",
-    "frontend/app.js": "console.log('Hello')"
+    "frontend/index.html": "complete HTML code",
+    "frontend/styles.css": "complete CSS code",
+    "frontend/app.js": "complete JavaScript code"
   },
-  "preview": "<!DOCTYPE html> ... full preview HTML ..."
-}`;
+  "preview": "standalone HTML file with inline CSS/JS for preview"
+}
 
-        // --- Robust OpenRouter call (R1 + fallback) ---
-        const or = await callOpenRouterRobust(
+CODE QUALITY STANDARDS:
+3. HTML: Semantic HTML5, proper accessibility (ARIA labels, alt texts), clean structure
+4. CSS: Modern CSS3 with advanced features:
+   - CSS Grid and Flexbox for layouts
+   - CSS custom properties (variables) for theming
+   - Smooth animations and transitions
+   - Responsive design with mobile-first approach
+   - Beautiful gradients, shadows, and modern typography
+   - Dark mode support where appropriate
+5. JavaScript: Modern ES6+ features:
+   - Async/await, arrow functions, destructuring
+   - Modular, well-commented code with error handling
+   - Local storage for data persistence
+   - Event delegation and efficient DOM manipulation
+   - Input validation and user feedback
+   - Advanced features like drag-drop, search, filtering where relevant
+
+DESIGN REQUIREMENTS:
+6. Visually stunning with professional UI/UX
+7. Fully responsive across all devices
+8. Interactive elements with hover/focus states
+9. Loading states and smooth transitions
+10. Error handling with user-friendly messages
+11. The preview must be a perfect, standalone HTML file
+
+Make the application feature-rich, polished, and production-ready with exceptional attention to detail.`;
+
+        const userPrompt = `Create a professional web application for: "${prompt}"
+
+Requirements:
+- Complete, working code in all files
+- Modern, clean UI design
+- Responsive layout
+- Professional styling
+- All functionality implemented
+
+Return ONLY the JSON object.`;
+
+        const result = await callQwenCoder(
           [
-            { role: "system", content: "You are Dream2Design AI. Always return valid JSON only." },
+            { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt }
           ],
-          { temperature: 0.3, max_tokens: 4000 }
+          { temperature: 0.3, max_tokens: 12000 }
         );
 
-        const raw = or.ok ? or.content : "{}";
-        const parsed = normalizeAIJson(raw) || { files: { "frontend/index.html": raw }, preview: raw };
+        if (!result.ok) {
+          throw new Error(result.error || "AI generation failed");
+        }
 
-        // save files
-        for (const [filename, content] of Object.entries(parsed.files || {})) {
+        console.log("📝 Response received:", result.content.length, "chars");
+        console.log("📝 Raw response (first 1000 chars):", result.content.slice(0, 1000));
+
+        const parsed = normalizeAIJson(result.content);
+        
+        if (!parsed || !parsed.files || Object.keys(parsed.files).length === 0) {
+          console.error("❌ Invalid JSON from AI");
+          console.log("Raw (first 500 chars):", result.content.slice(0, 500));
+          throw new Error("AI returned invalid JSON format");
+        }
+
+        const fileNames = Object.keys(parsed.files);
+        console.log("✅ Parsed successfully");
+        console.log("📂 Files:", fileNames.join(", "));
+
+        // Save files
+        for (const [filename, content] of Object.entries(parsed.files)) {
+          console.log(`💾 ${filename} (${content.length} chars)`);
           writeFileSafe(path.join(dir, filename), content);
         }
 
         if (parsed.preview) {
+          console.log(`💾 preview.html (${parsed.preview.length} chars)`);
           writeFileSafe(path.join(dir, PREVIEW_HTML), parsed.preview);
         }
 
-        // write manifest
-        const allFiles = listAllFilesRecursive(dir).filter(f => f !== MANIFEST && f !== PREVIEW_HTML);
+        // Manifest
+        const allFiles = listAllFilesRecursive(dir).filter(
+          f => f !== MANIFEST && f !== PREVIEW_HTML
+        );
         writeFileSafe(path.join(dir, MANIFEST), JSON.stringify({ files: allFiles }, null, 2));
 
         jobs[jobId].result = parsed;
         jobs[jobId].status = "done";
-        jobs[jobId].progress.push("✅ Job complete, files saved.");
+        jobs[jobId].progress.push(`✅ Generated ${allFiles.length} files successfully!`);
+        
+        console.log(`✅ JOB COMPLETED: ${jobId}`);
+        console.log("=".repeat(70) + "\n");
+        
       } catch (err) {
-        console.error("AI error:", err);
+        console.error("\n❌ ERROR:", err.message);
+        console.error("=".repeat(70) + "\n");
         jobs[jobId].status = "error";
         jobs[jobId].result = { error: err.message };
+        jobs[jobId].progress.push(`❌ Error: ${err.message}`);
       }
     })();
+    
   } catch (err) {
+    console.error("❌ Route error:", err);
     res.status(500).json({ error: err.message });
   }
 });
 
 // STATUS
 app.get("/status/:jobId", (req, res) => {
-  res.json(jobs[req.params.jobId] || { error: "Not found" });
+  const job = jobs[req.params.jobId];
+  if (!job) return res.status(404).json({ error: "Job not found" });
+  res.json(job);
 });
 
 // FILE TREE
@@ -353,21 +451,22 @@ app.put("/api/jobs/:jobId/file", (req, res) => {
 app.get("/api/jobs/:jobId/preview", (req, res) => {
   const dir = jobDirOf(req.params.jobId);
   const previewFile = path.join(dir, PREVIEW_HTML);
-  if (fs.existsSync(previewFile)) {
-    return res.sendFile(previewFile);
-  }
-  // fallback (rare)
-  const any = listAllFilesRecursive(dir).find(f => f.toLowerCase().endsWith("generator.html"));
-  if (any) return res.sendFile(path.join(dir, any));
-  return res.status(404).send("⚠️ No preview found");
+  if (fs.existsSync(previewFile)) return res.sendFile(previewFile);
+  
+  const fallback = listAllFilesRecursive(dir).find(f => f.includes("index.html"));
+  if (fallback) return res.sendFile(path.join(dir, fallback));
+  
+  res.status(404).send("⚠️ No preview found");
 });
 
-// CHAT (existing-files-first updates + plain-text sidebar)
+// CHAT
 app.post("/api/chat/:jobId", async (req, res) => {
   const { message } = req.body;
   const jobId = req.params.jobId;
 
   if (!jobs[jobId]) return res.status(404).json({ error: "Job not found" });
+
+  console.log(`\n💬 CHAT - Job ${jobId}: ${message.slice(0, 80)}`);
 
   const dir = jobDirOf(jobId);
   const manifest = readJSONSafe(path.join(dir, MANIFEST), { files: [] });
@@ -376,19 +475,17 @@ app.post("/api/chat/:jobId", async (req, res) => {
   jobs[jobId].messages = jobs[jobId].messages || [];
   jobs[jobId].messages.push({ role: "user", content: message });
 
-  const systemRules = `You are Dream2Design AI.
+  const systemRules = `You are a code editor AI for Dream2Design.
 
-IMPORTANT RULES:
-- You are editing an EXISTING project. DO NOT create new files unless absolutely necessary.
-- Prefer updating these files: 
+EXISTING FILES:
 ${existingFiles.map(f => `- ${f}`).join("\n")}
-- If a new component/page is needed, integrate it into the most relevant existing file(s) above.
-- Return ONLY JSON when you are sending code updates:
-  {
-    "files": { "path/to/file": "full new file content", ... },
-    "preview": "<!DOCTYPE html>... (optional updated live preview HTML)"
-  }
-- If the user asks for explanations, suggestions, or reasoning, answer in plain text (NO CODE JSON).`;
+
+RULES:
+1. UPDATE existing files only. Do NOT create new files.
+2. For code changes, return JSON:
+   { "files": { "path": "complete file content" }, "preview": "updated preview if needed" }
+3. For questions, return plain text (no JSON).
+4. Always provide complete file content, not snippets.`;
 
   const messages = [
     { role: "system", content: systemRules },
@@ -396,26 +493,20 @@ ${existingFiles.map(f => `- ${f}`).join("\n")}
   ];
 
   try {
-    // --- Robust OpenRouter call with fallback ---
-    const or = await callOpenRouterRobust(messages, {
-      temperature: 0.3,
-      max_tokens: 4000
-    });
+    const result = await callQwenCoder(messages, { temperature: 0.3, max_tokens: 12000 });
 
-    const reply = or.ok ? or.content : "⏳ The model didn’t send a message (auto-retried). Please rephrase and try again.";
+    const reply = result.ok ? result.content : "⚠️ AI unavailable. Please try again.";
     jobs[jobId].messages.push({ role: "assistant", content: reply });
 
-    // parse possible JSON block from mixed reply
-    const parsed = normalizeAIJson(reply);
+    console.log(`🤖 Reply: ${reply.length} chars`);
 
+    const parsed = normalizeAIJson(reply);
     let filesUpdated = false;
     let newFiles = [];
-    let chatReply = reply; // default plain text to sidebar
+    let chatReply = reply;
 
     if (parsed && parsed.files && Object.keys(parsed.files).length > 0) {
       const updated = [];
-
-      // fresh list of current files in project
       const currentList = listAllFilesRecursive(dir).filter(
         f => f !== MANIFEST && f !== PREVIEW_HTML
       );
@@ -426,42 +517,51 @@ ${existingFiles.map(f => `- ${f}`).join("\n")}
           : pickBestTarget(currentList, incomingName);
 
         if (!target) {
-          // allow new file only if this extension doesn't exist anywhere yet
           const ext = path.extname(incomingName).toLowerCase();
           const hasExt = currentList.some(f => path.extname(f).toLowerCase() === ext);
-          if (!hasExt) {
-            target = incomingName;
-          } else {
-            continue; // skip creating extra files
-          }
+          if (!hasExt) target = incomingName;
+          else continue;
         }
 
+        console.log(`💾 Updating: ${target}`);
         writeFileSafe(path.join(dir, target), content);
         if (!updated.includes(target)) updated.push(target);
       }
 
-      if (parsed.preview && typeof parsed.preview === "string") {
+      if (parsed.preview) {
         writeFileSafe(path.join(dir, PREVIEW_HTML), parsed.preview);
       }
 
       if (updated.length > 0) {
         filesUpdated = true;
         newFiles = updated;
-        chatReply = `✅ Updated files: ${updated.join(", ")} (no new files created)`;
+        chatReply = `✅ Updated: ${updated.join(", ")}`;
 
-        // refresh manifest
-        const refreshed = listAllFilesRecursive(dir).filter(f => f !== MANIFEST && f !== PREVIEW_HTML);
+        const refreshed = listAllFilesRecursive(dir).filter(
+          f => f !== MANIFEST && f !== PREVIEW_HTML
+        );
         writeFileSafe(path.join(dir, MANIFEST), JSON.stringify({ files: refreshed }, null, 2));
+        console.log(`✅ Updated ${updated.length} file(s)`);
       }
     }
 
     res.json({ reply: chatReply, filesUpdated, newFiles });
+    
   } catch (err) {
-    console.error("CHAT error:", err);
+    console.error("❌ Chat error:", err);
     res.status(500).json({ error: err.message });
   }
 });
 
 // SERVER
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Dream2Design backend running on http://localhost:${PORT}`));
+app.listen(PORT, () => {
+  console.log("\n" + "=".repeat(70));
+  console.log("🚀 Dream2Design - Powered by Qwen3 Coder");
+  console.log("=".repeat(70));
+  console.log(`📡 Server: http://localhost:${PORT}`);
+  console.log(`📁 Jobs: ${JOBS_DIR}`);
+  console.log(`🎯 Model: Qwen3 Coder (free) - 262K context`);
+  console.log(`🔑 API: ✅ Loaded`);
+  console.log("=".repeat(70) + "\n");
+});
