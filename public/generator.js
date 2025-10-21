@@ -126,14 +126,11 @@ async function onSend() {
     setSendingState(true);
 
     if (!currentJobId) {
-      // YAHAN FIX KARO - FormData properly use karo
-      const formData = new FormData();
-      formData.append("prompt", text);
-
       console.log("Starting new project...");
       const resp = await fetch("/api/generate", {
         method: "POST",
-        body: formData  // ✅ FormData send karo (no headers needed)
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: text })
       });
 
       if (!resp.ok) {
